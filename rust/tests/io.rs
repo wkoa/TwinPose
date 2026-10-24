@@ -308,3 +308,31 @@ fn panoptic_missing_file_is_an_empty_annotation_frame() {
     assert_eq!(frames[0][&7].len(), 19);
     assert!(frames[1].is_empty());
 }
+#[test]
+fn text_person_records_may_span_physical_lines() {
+    let t = Temp::new();
+    let path = t.0.join("campus.txt");
+    fs::write(&path, "frame 0\np 1\n1 2 3\n4 5 6\n").unwrap();
+    let c = Config {
+        ground_truth_loader: "Campus".into(),
+        ground_truth_skel_type: "Body25".into(),
+        ground_truth_joint_type_num: 2,
+        ..Default::default()
+    };
+    let frames = load_ground_truth(&c, &path).unwrap();
+    assert_eq!(frames[0][&0][&1].0, [4., 5., 6.]);
+    let path = t.0.join("osd.txt");
+    fs::write(
+        &path,
+        "frame 1\nview 0\np 1\n10 20 0.9\nview 1\np 1\n11 21 0.8\n",
+    )
+    .unwrap();
+    let c = Config {
+        detection_loader: "OSD".into(),
+        detection_view_num: 2,
+        detection_joint_type_num: 1,
+        ..Default::default()
+    };
+    let frames = load_detections(&c, &path).unwrap();
+    assert_eq!(frames[0].1[1].joints[&0][0].point, [11., 21.]);
+}

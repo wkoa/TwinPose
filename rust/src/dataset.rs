@@ -131,6 +131,23 @@ impl Tokens {
         Ok(())
     }
 }
+// Text records can span several physical lines (the original loaders use >>).
+// Ignore unrelated comment/header lines while retaining numeric continuations.
+fn text_records(path: &Path) -> Result<Vec<(String, Vec<String>)>> {
+    let mut records: Vec<(String, Vec<String>)> = Vec::new();
+    for line in fs::read_to_string(path)?.lines() {
+        let words: Vec<String> = line.split_whitespace().map(str::to_owned).collect();
+        let Some(first) = words.first() else { continue };
+        if matches!(first.as_str(), "frame" | "view" | "p") {
+            records.push((first.clone(), words[1..].to_vec()));
+        } else if words.iter().all(|v| v.parse::<f64>().is_ok())
+            && let Some((_, data)) = records.last_mut()
+        {
+            data.extend(words);
+        }
+    }
+    Ok(records)
+}
 fn empty_view() -> View {
     View {
         camera: Camera {
@@ -489,16 +506,12 @@ pub fn load_detections(c: &Config, path: &Path) -> Result<Vec<(usize, MultiView)
         "OSD" => {
             let mut current = None;
             let mut last_view = None;
-            for line in fs::read_to_string(path)?.lines() {
-                let mut words = line.split_whitespace();
-                let Some(keyword) = words.next() else {
-                    continue;
-                };
+            for (keyword, words) in text_records(path)? {
                 let mut ts = Tokens {
-                    data: words.map(str::to_owned).collect(),
+                    data: words,
                     offset: 0,
                 };
-                match keyword {
+                match keyword.as_str() {
                     "frame" => {
                         let id = ts.count()?;
                         if frames.contains_key(&id) || current.is_some_and(|old| id <= old) {
@@ -672,13 +685,12 @@ pub fn load_ground_truth(c: &Config, path: &Path) -> Result<Vec<MultiPose3D>> {
             ts.done()?;
         }
         "Campus" => {
-            for line in fs::read_to_string(path)?.lines() {
-                let mut words = line.split_whitespace();
-                match words.next() {
-                    Some("frame") => frames.push(MultiPose3D::new()),
-                    Some("p") => {
+            for (keyword, words) in text_records(path)? {
+                match keyword.as_str() {
+                    "frame" => frames.push(MultiPose3D::new()),
+                    "p" => {
                         let mut ts = Tokens {
-                            data: words.map(str::to_owned).collect(),
+                            data: words,
                             offset: 0,
                         };
                         let id: usize =
