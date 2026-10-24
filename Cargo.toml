@@ -1,0 +1,26 @@
+[package]
+name = "twinpose"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "MIT"
+description = "Rust port of TwinPose multi-view 3D pose reconstruction"
+
+[lib]
+path = "rust/src/lib.rs"
+
+[[bin]]
+name = "twinpose"
+path = "rust/src/main.rs"
+
+[dependencies]
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.150"
+
+[[test]]
+name = "core"
+path = "rust/tests/core.rs"
+
+[[test]]
+name = "io"
+path = "rust/tests/io.rs"

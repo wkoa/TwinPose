@@ -1,5 +1,9 @@
 # TwinPose
 
+Rust algorithm library and CLI: see [RUST_MIGRATION.md](RUST_MIGRATION.md) for
+build/run commands, source mapping, numerical comparisons and known differences.
+The original C++ application remains below as a reference.
+
 [![License](http://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)
 
 **[SIGGRAPH 2026]** Official implementation of *"TwinPose: Person-Specific Subspaces for Multi-View 3D Pose Estimation"*
